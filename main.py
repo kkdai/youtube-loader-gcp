@@ -58,16 +58,30 @@ def load_youtube_data():
         logging.debug(f"Loading YouTube data for video ID: {v_id}")
         google_api_client = init_google_api_client()
 
-        # Use Youtube Ids
-        youtube_loader_ids = GoogleApiYoutubeLoader(
-            google_api_client=google_api_client,
-            video_ids=[v_id],
-            add_video_info=True,
-        )
-
-        # Load data
-        logging.debug("Loading data from video ID")
-        ids_data = youtube_loader_ids.load()
+        # First try with English captions
+        try:
+            logging.debug("Attempting to load with English captions")
+            youtube_loader_ids = GoogleApiYoutubeLoader(
+                google_api_client=google_api_client,
+                video_ids=[v_id],
+                add_video_info=True,
+                captions_language="en",
+            )
+            ids_data = youtube_loader_ids.load()
+        except Exception as e:
+            if "Caption track" in str(e) and "not found" in str(e):
+                # If English captions not found, try Chinese
+                logging.debug("English captions not found, trying Chinese captions")
+                youtube_loader_ids = GoogleApiYoutubeLoader(
+                    google_api_client=google_api_client,
+                    video_ids=[v_id],
+                    add_video_info=True,
+                    captions_language="zh",
+                )
+                ids_data = youtube_loader_ids.load()
+            else:
+                # Re-raise if it's not a caption-related error
+                raise
 
         logging.debug("Data loaded successfully")
         return jsonify({"ids_data": str(ids_data)})
