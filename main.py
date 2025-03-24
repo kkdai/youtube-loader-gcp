@@ -65,7 +65,6 @@ def load_youtube_data():
                 google_api_client=google_api_client,
                 video_ids=[v_id],
                 add_video_info=True,
-                captions_language="en",
             )
             ids_data = youtube_loader_ids.load()
         except Exception as e:
