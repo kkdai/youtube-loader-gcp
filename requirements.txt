@@ -1,8 +1,8 @@
-google-cloud-secret-manager==2.16.1
-google-api-python-client==2.86.0
-google-auth-oauthlib==1.0.0
-langchain==0.0.331
-langchain-community==0.0.6
-youtube-transcript-api==0.6.1
-flask==2.3.2
-gunicorn==20.1.0
+google-cloud-secret-manager
+google-api-python-client
+google-auth-oauthlib
+langchain
+langchain-community
+youtube-transcript-api
+flask
+gunicorn
