@@ -3,6 +3,6 @@ google-api-python-client
 google-auth-oauthlib
 langchain
 langchain-community
-youtube-transcript-api
-flask
-gunicorn
+youtube-transcript-api==1.0.2
+flask==2.3.2
+gunicorn==20.1.0
