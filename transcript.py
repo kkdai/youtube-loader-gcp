@@ -5,8 +5,8 @@ import os
 
 def get_transcripts(video_id, languages):
     # Get proxy credentials from environment variables
-    proxy_username = os.environ.get("PROXY_USERNAME", "<proxy-username>")
-    proxy_password = os.environ.get("PROXY_PASSWORD", "<proxy-password>")
+    proxy_username = os.environ.get("PROXY_USERNAME")
+    proxy_password = os.environ.get("PROXY_PASSWORD")
 
     ytt_api = YouTubeTranscriptApi(
         proxy_config=WebshareProxyConfig(
