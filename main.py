@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 from google.cloud import secretmanager
 from langchain_community.document_loaders import GoogleApiClient, GoogleApiYoutubeLoader
+from transcript import get_transcripts
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,8 +49,8 @@ def init_google_api_client():
     return google_api_client
 
 
-@app.route("/load-youtube-data", methods=["GET"])
-def load_youtube_data():
+@app.route("/load-youtube-transcript", methods=["GET"])
+def load_youtube_transcript():
     try:
         v_id = request.args.get("v_id")
         if not v_id:
@@ -73,6 +74,33 @@ def load_youtube_data():
         return jsonify({"ids_data": str(ids_data)})
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/load-youtube-data", methods=["GET"])
+def load_youtube_data():
+    try:
+        v_id = request.args.get("v_id")
+        if not v_id:
+            return jsonify({"error": "Missing 'v_id' parameter"}), 400
+
+        # Get languages from request parameters or use default
+        languages_param = request.args.get("languages", "en")
+        languages = languages_param.split(",")
+
+        logging.debug(
+            f"Loading YouTube transcript for video ID: {v_id} with languages: {languages}"
+        )
+
+        # Call the get_transcripts function from transcript.py
+        transcript_text = get_transcripts(v_id, languages)
+
+        logging.debug("Transcript loaded successfully")
+        return jsonify({"transcript": transcript_text})
+    except Exception as e:
+        logging.error(
+            f"An error occurred while loading transcript: {str(e)}", exc_info=True
+        )
         return jsonify({"error": str(e)}), 500
 
 
