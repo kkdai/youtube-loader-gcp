@@ -49,8 +49,8 @@ def init_google_api_client():
     return google_api_client
 
 
-@app.route("/load-youtube-transcript", methods=["GET"])
-def load_youtube_transcript():
+@app.route("/load-youtube-data", methods=["GET"])
+def load_youtube_data():
     try:
         v_id = request.args.get("v_id")
         if not v_id:
@@ -77,8 +77,8 @@ def load_youtube_transcript():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/load-youtube-data", methods=["GET"])
-def load_youtube_data():
+@app.route("/load-youtube-transcript", methods=["GET"])
+def load_youtube_transcript():
     try:
         v_id = request.args.get("v_id")
         if not v_id:
