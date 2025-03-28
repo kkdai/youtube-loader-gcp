@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 from google.cloud import secretmanager
 from langchain_community.document_loaders import GoogleApiClient, GoogleApiYoutubeLoader
 from transcript import get_transcripts
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,13 +14,41 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 
 
+def is_running_on_gcp():
+    """Check if the application is running on Google Cloud Platform."""
+    # Check for GCP-specific environment variables
+    gcp_env_vars = ["K_SERVICE", "GOOGLE_CLOUD_PROJECT", "K_REVISION"]
+    return any(var in os.environ for var in gcp_env_vars)
+
+
 def get_secret(secret_id):
+    """Get secret either from GCP Secret Manager or local environment variables."""
     logging.debug(f"Fetching secret for: {secret_id}")
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/{os.environ['PROJECT_ID']}/secrets/{secret_id}/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    secret_data = response.payload.data.decode("UTF-8")
-    logging.debug(f"Secret fetched successfully for: {secret_id}, {secret_data[:50]}")
+
+    # If running on GCP, use Secret Manager
+    if is_running_on_gcp():
+        logging.debug("Running on GCP, using Secret Manager")
+        client = secretmanager.SecretManagerServiceClient()
+        name = (
+            f"projects/{os.environ['PROJECT_ID']}/secrets/{secret_id}/versions/latest"
+        )
+        response = client.access_secret_version(request={"name": name})
+        secret_data = response.payload.data.decode("UTF-8")
+        logging.debug(
+            f"Secret fetched successfully from Secret Manager for: {secret_id}"
+        )
+    else:
+        # If running locally, use environment variables
+        logging.debug("Running locally, using environment variables")
+        env_var_name = f"GOOGLE_SECRET_KEY_{secret_id.upper()}"
+        secret_data = os.environ.get(env_var_name)
+        if not secret_data:
+            logging.error(f"Secret not found in environment variable: {env_var_name}")
+            raise ValueError(
+                f"Secret not found: {secret_id}. Set the environment variable {env_var_name}"
+            )
+        logging.debug(f"Secret fetched successfully from environment for: {secret_id}")
+
     return secret_data
 
 
