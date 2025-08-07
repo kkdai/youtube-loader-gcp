@@ -121,8 +121,11 @@ def load_youtube_transcript():
             f"Loading YouTube transcript for video ID: {v_id} with languages: {languages}"
         )
 
+        # Get the API key from Secret Manager or environment variables
+        api_key = get_secret("YOUTUBE_API_KEY")
+
         # Call the get_transcripts function from transcript.py
-        transcript_text = get_transcripts(v_id, languages)
+        transcript_text = get_transcripts(v_id, api_key, languages)
 
         logging.debug("Transcript loaded successfully")
         return jsonify({"transcript": transcript_text})
