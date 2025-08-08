@@ -113,19 +113,20 @@ def load_youtube_transcript():
         if not v_id:
             return jsonify({"error": "Missing 'v_id' parameter"}), 400
 
-        # Get languages from request parameters or use default
-        languages_param = request.args.get("languages", "en")
-        languages = languages_param.split(",")
+        # Get languages from request parameters. If not provided, use the default.
+        languages_param = request.args.get("languages")
+        if languages_param:
+            languages = languages_param.split(",")
+        else:
+            # Default to English, Japanese, and Chinese (Traditional and Simplified)
+            languages = ['en', 'ja', 'zh-TW', 'zh-CN', 'zh-Hant', 'zh-Hans']
 
         logging.debug(
             f"Loading YouTube transcript for video ID: {v_id} with languages: {languages}"
         )
 
-        # Get the API key from Secret Manager or environment variables
-        api_key = get_secret("YOUTUBE_API_KEY")
-
         # Call the get_transcripts function from transcript.py
-        transcript_text = get_transcripts(v_id, api_key, languages)
+        transcript_text = get_transcripts(v_id, languages)
 
         logging.debug("Transcript loaded successfully")
         return jsonify({"transcript": transcript_text})

@@ -1,75 +1,98 @@
-# YouTube Data Loader
+# YouTube 字幕與資料載入器
 
-This project is a Flask application designed to load YouTube data using the Google API. It is optimized for deployment on Google Cloud Run and leverages Google Cloud's Secret Manager for secure management of API credentials. The application uses the `langchain_community` library to interact with YouTube data.
+這是一個基於 Flask 開發的應用程式，旨在從 YouTube 影片中提取字幕與中繼資料。它特別為部署在 Google Cloud Run 上進行了優化，並能處理任何公開的 YouTube 影片。
 
-## Features
+## 主要功能
 
-- Fetches YouTube data using channel names or video IDs.
-- Securely manages API credentials with Google Cloud Secret Manager.
-- Provides a RESTful API endpoint to load YouTube data.
-- Designed for seamless deployment on Google Cloud Run.
+- **提取影片字幕**：透過 `/load-youtube-transcript` 端點，使用影片 ID (`v_id`) 提取任何公開影片的字幕。
+- **多語言支援**：預設會依序嘗試抓取英文 (`en`)、日文 (`ja`)、繁體中文 (`zh-TW`) 和簡體中文 (`zh-CN`) 的字幕。您也可以透過 `languages` 參數自訂語言順序 (例如：`languages=es,fr`)。
+- **提取影片資訊**：透過 `/load-youtube-data` 端點，使用 `langchain_community` 函式庫獲取影片的詳細資訊 (標題、作者等)。
+- **RESTful API**：提供簡單易用的 API 端點來獲取資料。
+- **專為雲端設計**：可無縫部署至 Google Cloud Run 平台。
 
-## Prerequisites
+## 環境準備
 
-- Python 3.7 or higher
-- Google Cloud account with Secret Manager API enabled
-- YouTube API credentials stored in Google Cloud Secret Manager
-- Flask
-- `langchain_community` library
+在部署或本機執行前，請確保您已安裝以下工具：
 
-## Setup
+- Python 3.7 或更高版本
+- Google Cloud SDK (gcloud CLI)
 
-1. **Clone the repository:**
+## 本機執行與測試
 
-   ```bash
-   git clone https://github.com/kkdai/gcp-test-youtuber.git
-   cd gcp-test-youtuber
-   ```
+1.  **複製專案**：
+    ```bash
+    git clone https://github.com/kkdai/gcp-test-youtuber.git
+    cd gcp-test-youtuber
+    ```
 
-2. **Install dependencies:**
+2.  **安裝依賴套件**：
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+3.  **設定環境變數**：
+    ```bash
+    export PORT=8080
+    # 如果要測試 /load-youtube-data，需要設定以下變數並在 Secret Manager 中準備好憑證
+    export PROJECT_ID="YOUR_GCP_PROJECT_ID" 
+    export GOOGLE_SECRET_KEY_YOUTUBE_API_CREDENTIALS='YOUR_SERVICE_ACCOUNT_JSON_CONTENT'
+    ```
 
-3. **Set environment variables:**
+4.  **啟動應用程式**：
+    ```bash
+    python main.py
+    ```
 
-   Ensure the following environment variables are set:
+5.  **測試端點**：
+    - 字幕：`curl "http://localhost:8080/load-youtube-transcript?v_id=KsYicre9mjg"`
+    - 影片資訊：`curl "http://localhost:8080/load-youtube-data?v_id=KsYicre9mjg"`
 
-   - `PROJECT_ID`: Your Google Cloud project ID.
-   - `PORT`: The port on which the Flask app will run (default is 8080).
+## 部署到 Google Cloud Run
 
-4. **Store YouTube API credentials in Google Cloud Secret Manager:**
+1.  **設定您的 Google Cloud 專案 ID**：
+    ```bash
+    export PROJECT_ID="YOUR_GCP_PROJECT_ID"
+    gcloud config set project $PROJECT_ID
+    ```
 
-   - Create a secret named `youtube_api_credentials` in your Google Cloud project.
-   - Store your YouTube API credentials JSON in this secret.
+2.  **建置 Docker 映像檔並提交至 Google Container Registry**：
+    ```bash
+    gcloud builds submit --tag gcr.io/$PROJECT_ID/youtube-loader
+    ```
 
-## Deploying to Google Cloud Run
+3.  **部署應用程式至 Cloud Run**：
+    ```bash
+    gcloud run deploy youtube-loader \
+      --image gcr.io/$PROJECT_ID/youtube-loader \
+      --platform managed \
+      --region asia-east1 \
+      --allow-unauthenticated
+    ```
+    *   `--region`：您可以選擇離您最近的區域。
+    *   `--allow-unauthenticated`：允許公開存取您的 API 端點。
 
-1. **Build and deploy the application:**
+4.  **存取您的服務**：
+    部署成功後，gcloud 會提供一個服務 URL。您可以使用該 URL 來存取您的 API，例如：
+    `https://youtube-loader-xxxxxxxx-an.a.run.app/load-youtube-transcript?v_id=VIDEO_ID`
 
-   Use the Google Cloud SDK to build and deploy the application to Cloud Run:
+## API 端點
 
-   ```bash
-   gcloud builds submit --tag gcr.io/$PROJECT_ID/youtube-data-loader
-   gcloud run deploy youtube-data-loader --image gcr.io/$PROJECT_ID/youtube-data-loader --platform managed
-   ```
+- `GET /`
+  - **功能**：健康檢查端點。
+  - **回傳**：`Hello, World!`
 
-2. **Access the application:**
+- `GET /load-youtube-transcript`
+  - **功能**：獲取指定影片的字幕。
+  - **參數**：
+    - `v_id` (必要)：YouTube 影片的 ID。
+    - `languages` (可選)：用逗號分隔的語言代碼，例如 `ko,th`。若未提供，則使用預設值。
+  - **成功回傳**：`{"transcript": "影片字幕文字..."}`
+  - **失敗回傳**：`{"error": "錯誤訊息..."}`
 
-   - Once deployed, you will receive a URL for your Cloud Run service.
-   - Visit the URL to access the application endpoints:
-     - `/` for the "Hello, World!" message.
-     - `/load-youtube-data` to load YouTube data.
-
-## Logging
-
-The application uses Python's built-in logging module to log debug information. Logs include details about secret fetching, temporary file creation, and data loading processes.
-
-## Error Handling
-
-If an error occurs during the data loading process, the application will log the error and return a JSON response with the error message.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- `GET /load-youtube-data`
+  - **功能**：獲取影片的中繼資料。
+  - **注意**：此端點需要正確設定服務帳號憑證 (`youtube_api_credentials`) 於 Secret Manager 中。
+  - **參數**：
+    - `v_id` (必要)：YouTube 影片的 ID。
+  - **成功回傳**：`{"ids_data": "[Document(...)]"}`
+  - **失敗回傳**：`{"error": "錯誤訊息..."}`
