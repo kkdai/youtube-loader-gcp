@@ -7,3 +7,4 @@ youtube-transcript-api==0.6.2
 
 flask==2.3.2
 gunicorn==20.1.0
+requests

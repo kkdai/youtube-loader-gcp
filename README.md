@@ -96,3 +96,11 @@
     - `v_id` (必要)：YouTube 影片的 ID。
   - **成功回傳**：`{"ids_data": "[Document(...)]"}`
   - **失敗回傳**：`{"error": "錯誤訊息..."}`
+
+- `GET /summarize-youtube`
+  - **功能**：使用 Gemini 1.5 Flash 模型產生影片的三句中文摘要。
+  - **注意**：此端點需要您在 Secret Manager 中設定名為 `GEMINI_API_KEY` 的密鑰。您可以從 [Google AI Studio](https://aistudio.google.com/app/apikey) 取得此金鑰。
+  - **參數**：
+    - `v_id` (必要)：YouTube 影片的 ID。
+  - **成功回傳**：`{"summary": "由 Gemini 產生的三句中文摘要..."}`
+  - **失敗回傳**：`{"error": "錯誤訊息..."}`
